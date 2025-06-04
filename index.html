@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Attendance PWA with IndexedDB</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
   <style>
     table {
       border-collapse: collapse;
@@ -19,10 +21,10 @@
       cursor: pointer;
     }
     tr.present {
-      background-color: #8fbc8f; /* green */
+      background-color: #8fbc8f;
     }
     tr.absent {
-      background-color: #f08080; /* red */
+      background-color: #f08080;
     }
     button {
       margin: 20px auto;
@@ -30,10 +32,25 @@
       padding: 15px 30px;
       font-size: 20px;
     }
+    #nameForm {
+      text-align: center;
+      margin-top: 10px;
+    }
+    #greeting {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
   <h1 style="text-align:center;">Attendance Tracker</h1>
+
+  <div id="nameForm">
+    <input type="text" id="nameInput" placeholder="Enter your name" />
+    <button onclick="saveName()">Save</button>
+  </div>
+  <p id="greeting"></p>
 
   <table id="attendanceTable" style="display:none;">
     <thead>
@@ -43,8 +60,10 @@
   </table>
   <button id="submitBtn" style="display:none;">Submit Attendance</button>
 
+  <!-- External Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/idb@7/build/iife/index-min.js"></script>
+  <script src="idb.js"></script> <!-- Local fallback if CDN fails -->
+
   <script>
     const table = document.getElementById('attendanceTable');
     const tbody = table.querySelector('tbody');
@@ -54,7 +73,7 @@
     let attendance = {}; // roll_no -> 'present' or 'absent'
     let db;
 
-    const todayKey = new Date().toISOString().slice(0, 10); // e.g. '2025-06-04'
+    const todayKey = new Date().toISOString().slice(0, 10);
 
     async function initDB() {
       db = await idb.openDB('attendance-db', 1, {
@@ -146,6 +165,27 @@
     }
 
     init();
+
+    function saveName() {
+      const input = document.getElementById("nameInput");
+      const name = input.value.trim();
+      if (name) {
+        localStorage.setItem("userName", name);
+        document.getElementById("greeting").textContent = `Welcome, ${name}!`;
+        document.getElementById("nameForm").style.display = "none";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const name = localStorage.getItem("userName");
+      if (name) {
+        document.getElementById("greeting").textContent = `Welcome back, ${name}!`;
+        document.getElementById("nameForm").style.display = "none";
+      }
+    });
   </script>
+
+  <!-- Your app logic & service worker PWA install handling -->
+  <script src="app.js" defer></script>
 </body>
 </html>
