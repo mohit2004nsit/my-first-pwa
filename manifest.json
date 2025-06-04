@@ -1,10 +1,10 @@
 {
-  "name": "My First PWA",
-  "short_name": "PWA",
+  "name": "Faculty Data Manager",
+  "short_name": "FacultyData",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#4285f4",
   "icons": [
     {
       "src": "icon-192.png",

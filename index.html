@@ -1,29 +1,151 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>First PWA</title>
-
-  <!-- PWA Meta -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
-  <link rel="icon" href="icon-192.png">
-
-  <!-- Style -->
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Attendance PWA with IndexedDB</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      font-size: 18px;
+      text-align: left;
+      cursor: pointer;
+    }
+    tr.present {
+      background-color: #8fbc8f; /* green */
+    }
+    tr.absent {
+      background-color: #f08080; /* red */
+    }
+    button {
+      margin: 20px auto;
+      display: block;
+      padding: 15px 30px;
+      font-size: 20px;
+    }
+  </style>
 </head>
 <body>
-  <div id="welcomeSection">
-    <h1 id="greeting">Hello PWA!</h1>
-    <div id="nameForm">
-      <p>Please enter your name:</p>
-      <input type="text" id="nameInput" placeholder="Your name" />
-      <button onclick="saveName()">Submit</button>
-    </div>
-  </div>
+  <h1 style="text-align:center;">Attendance Tracker</h1>
 
-  <!-- App Logic -->
-  <script src="app.js"></script>
+  <table id="attendanceTable" style="display:none;">
+    <thead>
+      <tr><th>Roll No</th><th>Name</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <button id="submitBtn" style="display:none;">Submit Attendance</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/idb@7/build/iife/index-min.js"></script>
+  <script>
+    const table = document.getElementById('attendanceTable');
+    const tbody = table.querySelector('tbody');
+    const submitBtn = document.getElementById('submitBtn');
+
+    let students = [];
+    let attendance = {}; // roll_no -> 'present' or 'absent'
+    let db;
+
+    const todayKey = new Date().toISOString().slice(0, 10); // e.g. '2025-06-04'
+
+    async function initDB() {
+      db = await idb.openDB('attendance-db', 1, {
+        upgrade(db) {
+          if (!db.objectStoreNames.contains('attendance')) {
+            db.createObjectStore('attendance');
+          }
+        }
+      });
+    }
+
+    async function saveAttendance(dateKey, attendanceData) {
+      await db.put('attendance', attendanceData, dateKey);
+      alert('Attendance saved locally!');
+    }
+
+    async function loadAttendance(dateKey) {
+      return await db.get('attendance', dateKey);
+    }
+
+    async function fetchAndParseCSV() {
+      try {
+        const response = await fetch('students.csv');
+        if (!response.ok) throw new Error('CSV file not found or inaccessible');
+        const csvText = await response.text();
+        const results = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+        students = results.data;
+      } catch (error) {
+        alert('Error loading students.csv: ' + error.message);
+      }
+    }
+
+    async function loadAndRender() {
+      attendance = {};
+      const savedAttendance = await loadAttendance(todayKey) || {};
+      tbody.innerHTML = '';
+      students.forEach(student => {
+        const tr = document.createElement('tr');
+        tr.dataset.roll_no = student.roll_no;
+
+        const status = savedAttendance[student.roll_no] || 'absent';
+        attendance[student.roll_no] = status;
+        tr.classList.add(status);
+
+        const tdRoll = document.createElement('td');
+        tdRoll.textContent = student.roll_no;
+        const tdName = document.createElement('td');
+        tdName.textContent = student.name;
+
+        tr.appendChild(tdRoll);
+        tr.appendChild(tdName);
+
+        tr.addEventListener('click', () => {
+          toggleAttendance(tr);
+        });
+
+        tbody.appendChild(tr);
+      });
+      table.style.display = 'table';
+      submitBtn.style.display = 'block';
+    }
+
+    function toggleAttendance(tr) {
+      const roll_no = tr.dataset.roll_no;
+      if (attendance[roll_no] === 'absent') {
+        attendance[roll_no] = 'present';
+        tr.classList.remove('absent');
+        tr.classList.add('present');
+      } else {
+        attendance[roll_no] = 'absent';
+        tr.classList.remove('present');
+        tr.classList.add('absent');
+      }
+    }
+
+    submitBtn.addEventListener('click', async () => {
+      await saveAttendance(todayKey, attendance);
+    });
+
+    // Init
+    async function init() {
+      await initDB();
+      await fetchAndParseCSV();
+      if (students.length > 0) {
+        await loadAndRender();
+      } else {
+        alert('No student data available');
+      }
+    }
+
+    init();
+  </script>
 </body>
 </html>
