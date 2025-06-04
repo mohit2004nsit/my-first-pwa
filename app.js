@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// Save name to localStorage
 function saveName() {
   const input = document.getElementById("nameInput");
   const name = input.value.trim();
@@ -24,3 +25,39 @@ function saveName() {
     document.getElementById("nameForm").style.display = "none";
   }
 }
+
+// PWA Install Prompt logic
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault(); // Prevent auto prompt
+  deferredPrompt = e;
+
+  // Create and show custom install button
+  const installBtn = document.createElement('button');
+  installBtn.textContent = "Install App";
+  installBtn.style.position = "fixed";
+  installBtn.style.bottom = "20px";
+  installBtn.style.right = "20px";
+  installBtn.style.padding = "10px 15px";
+  installBtn.style.zIndex = "999";
+  installBtn.style.backgroundColor = "#000";
+  installBtn.style.color = "#fff";
+  installBtn.style.border = "none";
+  installBtn.style.borderRadius = "5px";
+  installBtn.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
+  document.body.appendChild(installBtn);
+
+  installBtn.addEventListener('click', () => {
+    installBtn.remove(); // Hide button
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(choice => {
+      if (choice.outcome === 'accepted') {
+        console.log("User accepted the install prompt");
+      } else {
+        console.log("User dismissed the install prompt");
+      }
+      deferredPrompt = null;
+    });
+  });
+});
