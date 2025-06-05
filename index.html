@@ -46,11 +46,13 @@
 <body>
   <h1 style="text-align:center;">Attendance Tracker</h1>
 
-  <div id="nameForm">
-    <input type="text" id="nameInput" placeholder="Enter your name" />
-    <button onclick="saveName()">Save</button>
+  <div id="loginForm">
+    <input type="email" id="emailInput" placeholder="Enter your email" required />
+    <input type="password" id="passwordInput" placeholder="Enter your password" required />
+    <button onclick="login()">Login</button>
   </div>
   <p id="greeting"></p>
+
 
   <table id="attendanceTable" style="display:none;">
     <thead>
@@ -65,6 +67,52 @@
   <script src="idb.js"></script> <!-- Local fallback if CDN fails -->
 
   <script>
+
+    const loginForm = document.getElementById("loginForm");
+    const greeting = document.getElementById("greeting");
+    let currentEmail = null;
+    
+    function login() {
+      const email = document.getElementById("emailInput").value.trim();
+      const password = document.getElementById("passwordInput").value.trim();
+    
+      if (!email || !password) {
+        alert("Please enter both email and password");
+        return;
+      }
+    
+      fetch(`https://script.google.com/macros/s/AKfycbwBMuAfd6-e5sfjAI8XGGp5cocH0i8AMMJwqWlEh6Blcu4typXHVNHK3B4XRLTpS_Mr/exec?mode=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            localStorage.setItem("loginEmail", email);
+            currentEmail = email;
+            greeting.textContent = `Welcome, ${data.name}`;
+            loginForm.style.display = "none";
+            init(); // load IndexedDB and CSV after login
+          } else {
+            alert("Invalid credentials");
+          }
+        })
+        .catch(err => alert("Login failed: " + err.message));
+    }
+    
+    document.addEventListener("DOMContentLoaded", () => {
+      const email = localStorage.getItem("loginEmail");
+      if (email) {
+        greeting.textContent = `Welcome back, ${email}`;
+        loginForm.style.display = "none";
+        currentEmail = email;
+        init(); // auto-login and load data
+      }
+    });
+  
+  
+  
+  
+  
+  
+  
     const table = document.getElementById('attendanceTable');
     const tbody = table.querySelector('tbody');
     const submitBtn = document.getElementById('submitBtn');
@@ -176,13 +224,15 @@
       }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
-      const name = localStorage.getItem("userName");
-      if (name) {
-        document.getElementById("greeting").textContent = `Welcome back, ${name}!`;
-        document.getElementById("nameForm").style.display = "none";
+    document.addEventListener("DOMContentLoaded", async () => {
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (user) {
+        document.getElementById("greeting").textContent = `Welcome back, ${user.name}!`;
+        document.getElementById("loginForm").style.display = "none";
+        await init(); // start app
       }
     });
+
   </script>
 
   <!-- Your app logic & service worker PWA install handling -->
