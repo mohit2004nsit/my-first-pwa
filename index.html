@@ -81,7 +81,17 @@
         return;
       }
     
-      fetch(`https://script.google.com/macros/s/AKfycbwBMuAfd6-e5sfjAI8XGGp5cocH0i8AMMJwqWlEh6Blcu4typXHVNHK3B4XRLTpS_Mr/exec?mode=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`)
+      fetch("https://script.google.com/macros/s/AKfycbwBMuAfd6-e5sfjAI8XGGp5cocH0i8AMMJwqWlEh6Blcu4typXHVNHK3B4XRLTpS_Mr/exec", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          mode: "login",
+          email: email,
+          password: password
+        })
+      })
         .then(res => res.json())
         .then(data => {
           if (data.success) {
@@ -96,16 +106,7 @@
         })
         .catch(err => alert("Login failed: " + err.message));
     }
-    
-    document.addEventListener("DOMContentLoaded", () => {
-      const email = localStorage.getItem("loginEmail");
-      if (email) {
-        greeting.textContent = `Welcome back, ${email}`;
-        loginForm.style.display = "none";
-        currentEmail = email;
-        init(); // auto-login and load data
-      }
-    });
+
   
   
   
